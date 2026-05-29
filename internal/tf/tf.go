@@ -10,6 +10,8 @@ import (
 	"github.com/l58193/terrabutler/internal/logger"
 	"github.com/l58193/terrabutler/internal/settings"
 	"github.com/l58193/terrabutler/internal/utils"
+
+	"sync"
 )
 
 var current_env = utils.CurrentEnv
@@ -178,13 +180,37 @@ func InitAllSites() error {
 	if index := slices.Index(sites, "inception"); index != -1 {
 		sites = sites[index+1:]
 	}
+
+	var wg sync.WaitGroup
+
+	var errorDuringInit bool
+
 	for _, site := range sites {
 
 		logger.Zap.Warn("Initializing " + site + " site")
-		err := CommandRunner("init", site, []string{}, []string{"-reconfigure"}, "backend")
-		if err != nil {
-			return errors.New("Error initializing all sites, during site " + site + ", Error: " + err.Error())
+
+		if os.Getenv("TERRABUTLER_PARALLEL") == "true" {
+
+			wg.Go(func() {
+				_, err := CommandRunnerNoVisibleOutput("init", site, []string{}, []string{"-reconfigure"}, "backend")
+				if err != nil {
+					logger.Zap.Error(err.Error())
+					errorDuringInit = true
+				}
+			})
+
+		} else {
+			err := CommandRunner("init", site, []string{}, []string{"-reconfigure"}, "backend")
+			if err != nil {
+				return errors.New("Error initializing all sites, during site " + site + ", Error: " + err.Error())
+			}
 		}
+
+	}
+	wg.Wait()
+
+	if errorDuringInit {
+		return errors.New("Error initializing all sites.")
 	}
 	return nil
 }

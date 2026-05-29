@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/afero"
 )
 
+var version string
+
 func main() {
 
 	// Using Real FileSystem
 	fs := afero.NewOsFs()
-
-	version := "v3.0.0"
 
 	err := cli.Run(version, fs)
 

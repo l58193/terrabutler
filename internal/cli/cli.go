@@ -75,6 +75,7 @@ func Run(version string, fs afero.Fs) error {
 				Name:  "version",
 				Usage: "Show version and exit",
 				Action: func(ctx context.Context, c *cli.Command) error {
+
 					fmt.Fprintf(c.Root().Writer, "%s: %s\n", c.Root().Name, c.Root().Version)
 					return nil
 				},
